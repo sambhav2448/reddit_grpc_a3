@@ -1,0 +1,116 @@
+//python -m grpc_tools.protoc -I protos --python_out=. --grpc_python_out=. protos/reddit.proto
+
+syntax = "proto3";
+
+package reddit;
+
+message User {
+    string userId = 1; // A human-readable ID
+}
+
+message Post {
+    string postId = 1; // A human-readable ID
+    string title = 2;
+    string content = 3;
+    oneof mediaType {
+        string imageUrl = 4;
+        string videoUrl = 5;
+    }
+    optional string authorId = 6; // Optional author ID
+    int32 score = 7; // Score can be negative
+    enum State {
+        NORMAL = 0;
+        LOCKED = 1;
+        HIDDEN = 2;
+    }
+    State state = 8;
+    string publicationDate = 9; // Publication date
+}
+
+message Comment {
+    string commentId = 1; // A human-readable ID
+    oneof parentType {
+        string parentPostId = 2;
+        string parentCommentId = 3;
+    }
+    string authorId = 4; // Author's ID
+    string content = 5; // Comment content
+    int32 score = 6; // Score
+    enum State {
+        NORMAL = 0;
+        HIDDEN = 1;
+    }
+    State state = 7;
+    string publicationDate = 8; // Publication date
+}
+
+service RedditService {
+    rpc CreatePost(PostCreationRequest) returns (Post);
+    rpc VoteOnPost(PostVoteRequest) returns (Post);
+    rpc GetPostDetails(PostDetailsRequest) returns (Post);
+    rpc CreateComment(CommentCreationRequest) returns (Comment);
+    rpc VoteOnComment(CommentVoteRequest) returns (Comment);
+    rpc GetTopComments(TopCommentsRequest) returns (TopCommentsResponse);
+    rpc GetCommentThread(CommentThreadRequest) returns (CommentThreadResponse);
+}
+
+message PostCreationRequest {
+    string title = 1;
+    string content = 2;
+    oneof mediaType {
+        string imageUrl = 3;
+        string videoUrl = 4;
+    }
+    optional string authorId = 5; // Optional author ID
+}
+
+message PostVoteRequest {
+    string postId = 1; // The post ID
+    bool isUpvote = 2; // True for upvote, False for downvote
+}
+
+message PostDetailsRequest {
+    string postId = 1; // The post ID
+}
+
+message CommentCreationRequest {
+    oneof parentType {
+        string parentPostId = 1;
+        string parentCommentId = 2;
+    }
+    string authorId = 3; // Author's ID
+    string content = 4; // Comment content
+}
+
+message CommentVoteRequest {
+    string commentId = 1; // The comment ID
+    bool isUpvote = 2; // True for upvote, False for downvote
+}
+
+message TopCommentsRequest {
+    string postId = 1; // Post ID for retrieving comments
+    int32 count = 2; // Number of comments to retrieve
+}
+
+message CommentOverview {
+    Comment comment = 1;
+    bool hasReplies = 2; // Indicates if the comment has replies
+}
+
+message TopCommentsResponse {
+    repeated CommentOverview commentsOverview = 1;
+}
+
+message CommentThreadRequest {
+    string commentId = 1; // Comment ID to expand
+    int32 depth = 2; // Depth of comments to retrieve
+}
+
+message CommentThread {
+    Comment parentComment = 1;
+    repeated Comment childComments = 2; // Replies to the comment
+}
+
+message CommentThreadResponse {
+    repeated CommentThread commentThreads = 1; // Comment threads with replies
+}
